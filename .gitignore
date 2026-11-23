@@ -33,3 +33,10 @@ next-env.d.ts
 npm-debug.log*
 .vercel
 .qodo
+
+
+.hwa/
+init.py
+init (*).py
+submit.py
+hwa-start.*
