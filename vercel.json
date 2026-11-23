@@ -1,7 +1,4 @@
 {
-  "outputDirectory": ".next",
-  "framework": "nextjs",
-  "routes": [
-    { "src": "/(.*)", "dest": "/$1" }
-  ]
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "crons": [{ "path": "/api/cron/expire-pending", "schedule": "0 4 * * *" }]
 }
