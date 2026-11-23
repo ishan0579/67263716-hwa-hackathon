@@ -3,6 +3,7 @@ import { z } from "zod";
 import type { DbOrTx } from "../db";
 import { db as rootDb } from "../db";
 import { siteConfig } from "../db/schema";
+import { getShippingConfig as memoryShippingConfig } from "../db/memory";
 
 export const shippingConfigSchema = z.object({
   currency: z.string().length(3),
@@ -42,6 +43,9 @@ export const DEFAULT_SHIPPING: ShippingConfig = {
 };
 
 export async function getShippingConfig(db: DbOrTx = rootDb): Promise<ShippingConfig> {
+  if (!process.env.DATABASE_URL) {
+    return memoryShippingConfig();
+  }
   const row = await db.query.siteConfig.findFirst({ where: eq(siteConfig.key, "shipping") });
   const parsed = shippingConfigSchema.safeParse(row?.value);
   return parsed.success ? parsed.data : DEFAULT_SHIPPING;

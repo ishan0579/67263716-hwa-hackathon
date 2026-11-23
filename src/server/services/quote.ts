@@ -3,6 +3,7 @@ import { db as rootDb, type DbOrTx } from "../db";
 import { inventory, products, productVariants } from "../db/schema";
 import { MAX_QTY_PER_LINE, type CartLineInput, type ShippingMethodId } from "@/lib/validation/checkout";
 import { getShippingConfig, shippingOptionsFor } from "./config";
+import { quoteCart as memoryQuoteCart } from "../db/memory";
 
 export type LineIssue = "not_found" | "unavailable" | "sold_out" | "insufficient_stock" | "over_limit";
 
@@ -69,6 +70,9 @@ export async function quoteCart(
   db: DbOrTx = rootDb,
   lockedInventory?: Map<string, { onHand: number; reserved: number }>,
 ): Promise<Quote> {
+  if (!process.env.DATABASE_URL) {
+    return memoryQuoteCart(input, shippingMethod);
+  }
   const merged = mergeLines(input);
   const ids = merged.map((l) => l.variantId);
   const rows = ids.length
