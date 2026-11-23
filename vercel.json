@@ -1,0 +1,7 @@
+{
+  "outputDirectory": ".next",
+  "framework": "nextjs",
+  "routes": [
+    { "src": "/(.*)", "dest": "/$1" }
+  ]
+}
