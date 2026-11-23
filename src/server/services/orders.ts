@@ -42,13 +42,6 @@ import {
 import { ApiError } from "../http";
 import type { CheckoutInput } from "@/lib/validation/checkout";
 import { describeIssue, mergeLines, quoteCart } from "./quote";
-import {
-  createOrder as memoryCreateOrder,
-  getOrderForCustomer as memoryGetOrderForCustomer,
-  getOrderViewById as memoryGetOrderViewById,
-  buildView as memoryBuildView,
-  expireStalePendingOrders as memoryExpireStalePendingOrders,
-} from "../db/memory";
 
 export type CreateOrderResult = {
   orderId: string;
@@ -135,9 +128,6 @@ export async function createOrder(
   opts: { idempotencyKey: string; provider: PaymentProvider },
   db = rootDb,
 ): Promise<CreateOrderResult> {
-  if (!process.env.DATABASE_URL) {
-    return memoryCreateOrder(input, opts);
-  }
   const fp = fingerprint(input);
   const lines = mergeLines(input.lines);
 
@@ -488,9 +478,6 @@ export async function getOrderForCustomer(
   trackingKey: string,
   db: DbOrTx = rootDb,
 ): Promise<CustomerOrderView | null> {
-  if (!process.env.DATABASE_URL) {
-    return memoryGetOrderForCustomer(orderNumber, trackingKey);
-  }
   const normalised = normaliseTrackingKey(trackingKey);
   const candidateHash = hashTrackingKey(normalised);
   const order = await db.query.orders.findFirst({ where: eq(orders.orderNumber, orderNumber.toUpperCase()) });
@@ -501,18 +488,12 @@ export async function getOrderForCustomer(
 }
 
 export async function getOrderViewById(orderId: string, db: DbOrTx = rootDb) {
-  if (!process.env.DATABASE_URL) {
-    return memoryGetOrderViewById(orderId);
-  }
   const order = await db.query.orders.findFirst({ where: eq(orders.id, orderId) });
   return order ? buildView(order, db) : null;
 }
 
 /** Releases stale Stripe reservations (sessions expire after 30 min; we allow 45). */
 export async function expireStalePendingOrders(db = rootDb) {
-  if (!process.env.DATABASE_URL) {
-    return memoryExpireStalePendingOrders();
-  }
   const stale = await db
     .select({ id: orders.id })
     .from(orders)

@@ -2,11 +2,6 @@ import { and, asc, eq, inArray } from "drizzle-orm";
 import { db as rootDb, type DbOrTx } from "../db";
 import { inventory, productImages, products, productVariants } from "../db/schema";
 import { MAX_QTY_PER_LINE } from "@/lib/validation/checkout";
-import {
-  getProductBySlug as memoryProductBySlug,
-  listActiveProducts as memoryListProducts,
-  getVariantAvailability as memoryVariantAvailability,
-} from "../db/memory";
 
 export type StockStatus = "in_stock" | "low_stock" | "sold_out";
 
@@ -72,9 +67,6 @@ export function toPublicVariant(
 
 /** Active product with active variants and live availability, or null. */
 export async function getProductBySlug(slug: string, db: DbOrTx = rootDb): Promise<PublicProduct | null> {
-  if (!process.env.DATABASE_URL) {
-    return memoryProductBySlug(slug);
-  }
   const product = await db.query.products.findFirst({
     where: and(eq(products.slug, slug), eq(products.isActive, true)),
   });
@@ -110,9 +102,6 @@ export async function getProductBySlug(slug: string, db: DbOrTx = rootDb): Promi
 }
 
 export async function listActiveProducts(db: DbOrTx = rootDb) {
-  if (!process.env.DATABASE_URL) {
-    return memoryListProducts();
-  }
   const list = await db.query.products.findMany({
     where: eq(products.isActive, true),
     orderBy: asc(products.createdAt),
@@ -121,9 +110,6 @@ export async function listActiveProducts(db: DbOrTx = rootDb) {
 }
 
 export async function getVariantAvailability(variantIds: string[], db: DbOrTx = rootDb) {
-  if (!process.env.DATABASE_URL) {
-    return memoryVariantAvailability(variantIds);
-  }
   if (!variantIds.length) return [];
   const rows = await db
     .select({ v: productVariants, inv: inventory, productActive: products.isActive })
